@@ -107,7 +107,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-
+          
+      - name: Adding Symlink
+        if: matrix.os == 'macos-13'
+        run: ln -sf /usr/local/opt/tcl-tk@9 /usr/local/opt/tcl-tk
+        
       - name: Build Python ${{ env.VERSION }}
         run: |
           ./builders/build-python.ps1 -Version $env:VERSION `
@@ -201,19 +205,15 @@ jobs:
           python-version: ${{ env.VERSION }}
           architecture: ${{ matrix.arch }}
 
-      - name: Adding Symlink
-        if: runner.os == 'macOS'
-        run: ln -sf /usr/local/opt/tcl-tk@8 /usr/local/opt/tcl-tk
-
-      - name: Import tkinter
-        if: runner.os == 'macOS'
-        run: |
-          python -c "import tkinter; print('Tkinter imported successfully. Version: {tkinter.TkVersion}')"
+      # - name: Import tkinter
+      #   if: runner.os == 'macOS'
+      #   run: |
+      #     python -c "import tkinter; print('Tkinter imported successfully. Version: {tkinter.TkVersion}')"
        
-      - name: Install tkinter
-        if: runner.os == 'macOS'
-        run: |
-          brew install python-tk
+      # - name: Install tkinter
+      #   if: runner.os == 'macOS'
+      #   run: |
+      #     brew install python-tk
           
       - name: Verbose sysconfig dump
         if: runner.os == 'Linux' || runner.os == 'macOS'
