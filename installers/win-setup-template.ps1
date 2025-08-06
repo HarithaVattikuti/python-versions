@@ -124,7 +124,7 @@ $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -Pyth
 Write-Host "PythonArchPath $PythonArchPath  PythonExecName $PythonExecName ExecParams $ExecParams"
 
 try {
-    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
+    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /log install.log"
     Write-Host "Executing command: $installCommand"
 
     $installOutput = cmd.exe /c $installCommand 2>&1
@@ -136,6 +136,19 @@ try {
         Write-Host "Command executed: $installCommand"
         Write-Host "Output: $installOutput"
         Write-Host "LastExitCode: $LASTEXITCODE"
+
+        if ($LASTEXITCODE -eq 1603) {
+            Write-Host "Fatal error during installation. Check installer logs for more details."
+        }
+
+         # Print the contents of install.log
+         if (Test-Path "$PythonArchPath\install.log") {
+            Write-Host "Contents of install.log:"
+            Get-Content "$PythonArchPath\install.log"
+        } else {
+            Write-Host "install.log file not found."
+        }
+
         Throw "Error happened during Python installation"
     } else {
         Write-Host "Python installation completed successfully."
@@ -153,7 +166,6 @@ Get-ChildItem -Path "$PythonToolcachePath\$MajorVersion.$MinorVersion.*" | ForEa
 }
 
 Write-Host "Installed files in architecture:"
-
 Get-ChildItem -Path "$PythonToolcachePath\$MajorVersion.$MinorVersion.*\$Architecture" | ForEach-Object {
     Write-Host $_.FullName
 }
