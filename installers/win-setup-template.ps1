@@ -127,14 +127,19 @@ Write-Host "PythonArchPath $PythonArchPath  PythonExecName $PythonExecName ExecP
 $systemArchitecture = (Get-CimInstance -ClassName Win32_ComputerSystem).SystemType
 Write-Host "System architecture detected: $systemArchitecture"
 
-if ($systemArchitecture -notmatch "ARM64") {
+# Validate architecture using $env:PROCESSOR_ARCHITECTURE
+$processorArchitecture = $env:PROCESSOR_ARCHITECTURE
+Write-Host "Processor architecture detected using environment variable: $processorArchitecture"
+
+# Compare both methods for consistency
+if ($systemArchitecture -notmatch "ARM64" -or $processorArchitecture -notmatch "ARM64") {
     Write-Host "Mismatch detected: The system architecture is $systemArchitecture, but the Python installer is ARM64."
     Write-Host "Please use an x64 installer for this system or switch to an ARM64 runner."
     Throw "System architecture mismatch. Python installation aborted."
 }
 
 try {
-    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /l*v install.log"
+    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log"
     Write-Host "Executing command: $installCommand"
 
     $installOutput = cmd.exe /c $installCommand 2>&1
