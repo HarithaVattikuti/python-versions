@@ -128,6 +128,8 @@ $installOutput = cmd.exe /c $installCommand 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error happened during Python installation:"
     Write-Host $installOutput
+    Write-Host "LastExitCode: $LASTEXITCODE"
+    Write-Host "Error: $($_.Exception.Message)"
     Throw "Error happened during Python installation"
 }
 
