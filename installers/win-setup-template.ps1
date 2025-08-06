@@ -123,14 +123,28 @@ $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -Pyth
 
 Write-Host "PythonArchPath $PythonArchPath  PythonExecName $PythonExecName ExecParams $ExecParams"
 
-$installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
-$installOutput = cmd.exe /c $installCommand 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Error happened during Python installation:"
+try {
+    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
+    Write-Host "Executing command: $installCommand"
+
+    $installOutput = cmd.exe /c $installCommand 2>&1
+    Write-Host "Command output:"
     Write-Host $installOutput
-    Write-Host "LastExitCode: $LASTEXITCODE"
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error happened during Python installation:"
+        Write-Host "Command executed: $installCommand"
+        Write-Host "Output: $installOutput"
+        Write-Host "LastExitCode: $LASTEXITCODE"
+        Throw "Error happened during Python installation"
+    } else {
+        Write-Host "Python installation completed successfully."
+    }
+} catch {
+    Write-Host "An exception occurred:"
     Write-Host "Error: $($_.Exception.Message)"
-    Throw "Error happened during Python installation"
+    Write-Host "StackTrace: $($_.Exception.StackTrace)"
+    Throw "Python installation failed due to an exception."
 }
 
 Write-Host "Installed files in $PythonToolcachePath\$MajorVersion.$MinorVersion"
