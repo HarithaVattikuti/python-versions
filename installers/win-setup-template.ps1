@@ -131,6 +131,22 @@ if ($LASTEXITCODE -ne 0) {
     Throw "Error happened during Python installation"
 }
 
+Write-Host "Installed files in $PythonToolcachePath\$MajorVersion.$MinorVersion"
+Get-ChildItem -Path "$PythonToolcachePath\$MajorVersion.$MinorVersion.*" | ForEach-Object {
+    Write-Host $_.FullName
+}
+
+Write-Host "Installed files in architecture:"
+
+Get-ChildItem -Path "$PythonToolcachePath\$MajorVersion.$MinorVersion.*\$Architecture" | ForEach-Object {
+    Write-Host $_.FullName
+}
+
+Write-Host "Files in $PythonArchPath"
+Get-ChildItem -Path $PythonArchPath | ForEach-Object {
+    Write-Host $_.FullName
+}
+
 if ($IsFreeThreaded) {
     # Delete python.exe and create a symlink to free-threaded exe
     Remove-Item -Path "$PythonArchPath\python.exe" -Force
