@@ -134,7 +134,7 @@ if ($systemArchitecture -notmatch "ARM64") {
 }
 
 try {
-    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log"
+    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /l*v install.log"
     Write-Host "Executing command: $installCommand"
 
     $installOutput = cmd.exe /c $installCommand 2>&1
