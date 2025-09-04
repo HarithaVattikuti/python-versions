@@ -102,7 +102,17 @@ foreach ($regKey in $allPythonUninstallRegKeys) {
         }
     }
 }
+
+# Before install
+$packageCache = "C:\ProgramData\Package Cache"
+if (Test-Path $packageCache) {
+    Write-Host "Cleaning up Package Cache"
+    Remove-Item -Path $packageCache -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 $IsMSI = $PythonExecName -match "msi"
+Write-Host "Is MSI $IsMSI"
+
 $IsFreeThreaded = $Architecture -match "-freethreaded"
 
 $MajorVersion = $Version.Split('.')[0]
@@ -155,9 +165,9 @@ Write-Host "System architecture detected: $systemArchitecture"
 $processorArchitecture = $env:PROCESSOR_ARCHITECTURE
 Write-Host "Processor architecture detected using environment variable: $processorArchitecture"
 
-# Compare both methods for consistency
+# Architecture check (abort on mismatch)
 if ($systemArchitecture -notmatch "ARM64" -or $processorArchitecture -notmatch "ARM64") {
-    Write-Host "Warning: System architecture is $systemArchitecture, processor architecture is $processorArchitecture, but the Python installer is ARM64. Continuing, but installation may fail if architectures are incompatible."
+    Throw "System or processor architecture ($systemArchitecture/$processorArchitecture) does not match installer (ARM64)."
 }
 
 try {
@@ -166,9 +176,9 @@ try {
     # Add extra MSI logging for deep troubleshooting
     $msiLog = "$PythonArchPath\msi-verbose.log"
     if ($IsMSI) {
-        $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log /L*V `"$msiLog`""
+        $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /passive /norestart /log install.log /L*V `"$msiLog`""
     } else {
-        $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log"
+        $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /passive /norestart /log install.log"
     }
     
     Write-Host "Executing command: $installCommand"
