@@ -78,6 +78,11 @@ $PythonToolcachePath = Join-Path -Path $ToolcacheRoot -ChildPath "Python"
 $PythonVersionPath = Join-Path -Path $PythonToolcachePath -ChildPath $Version
 $PythonArchPath = Join-Path -Path $PythonVersionPath -ChildPath $Architecture
 
+Write-Host "Checking toolcache for existing Python installations..."
+Get-ChildItem -Path "$ToolcacheRoot\Python" -Recurse | Where-Object { $_.Name -like "python.exe" } | ForEach-Object {
+    Write-Host "Found python.exe at: $($_.FullName)"
+}
+
 # Clean previous install for the target architecture and version
 if (Test-Path $PythonArchPath) {
     Write-Host "Cleaning up previous Python install at $PythonArchPath"
@@ -127,6 +132,9 @@ foreach ($regKey in $pythonRegKeys) {
     try {
         if (Test-Path $regKey) {
             Write-Host "Cleaning registry: $regKey"
+            Get-ChildItem $regKey | ForEach-Object {
+            Write-Host "SubKey: $($_.PSChildName)"
+            }
             Remove-Item -Path $regKey -Recurse -Force -ErrorAction SilentlyContinue
         }
     } catch { Write-Host ("Error cleaning registry {0}: {1}" -f $regKey, $_.Exception.Message) }
@@ -150,6 +158,19 @@ $packageCache = "C:\ProgramData\Package Cache"
 if (Test-Path $packageCache) {
     Write-Host "Cleaning up Package Cache"
     Remove-Item -Path $packageCache -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+Write-Host "Checking PATH for Python executables..."
+$env:PATH.Split(";") | Where-Object { $_ -match "Python" } | ForEach-Object { Write-Host "Path contains: $_" }
+
+Write-Host "Checking for running Python processes..."
+Get-Process | Where-Object { $_.ProcessName -like "python*" } | ForEach-Object {
+    Write-Host "Running Python process: $($_.ProcessName) (PID: $($_.Id))"
+}
+
+Write-Host "Checking Windows Installer cache for Python MSI packages..."
+Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "Python*" } | ForEach-Object {
+    Write-Host "Installed package: $($_.Name) version $($_.Version)"
 }
 
 $IsMSI = $PythonExecName -match "msi"
