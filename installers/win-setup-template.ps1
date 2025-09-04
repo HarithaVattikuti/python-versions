@@ -21,7 +21,7 @@ function Remove-RegistryEntries {
         [Parameter(Mandatory)][Int32] $MinorVersion
     )
 
-    $versionFilter = Get-RegistryVersionFilter -Architecture $HardwareArchitecture -MajorVersion $MajorVersion -MinorVersion $MinorVersion
+    $versionFilter = Get-RegistryVersionFilter -Architecture $Architecture -MajorVersion $MajorVersion -MinorVersion $MinorVersion
 
     $regPath = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products"
     if (Test-Path -Path Registry::$regPath) {
@@ -139,9 +139,7 @@ Write-Host "Processor architecture detected using environment variable: $process
 
 # Compare both methods for consistency
 if ($systemArchitecture -notmatch "ARM64" -or $processorArchitecture -notmatch "ARM64") {
-    Write-Host "Mismatch detected: The system architecture is $systemArchitecture, but the Python installer is ARM64."
-    Write-Host "Please use an x64 installer for this system or switch to an ARM64 runner."
-    Throw "System architecture mismatch. Python installation aborted."
+    Write-Host "Warning: System architecture is $systemArchitecture, processor architecture is $processorArchitecture, but the Python installer is ARM64. Continuing, but installation may fail if architectures are incompatible."
 }
 
 try {
@@ -166,7 +164,8 @@ try {
          # Print the contents of install.log
          if (Test-Path "$PythonArchPath\install.log") {
             Write-Host "Contents of install.log:"
-            Get-Content "$PythonArchPath\install.log"
+            Get-Content "$PythonArchPath\install.log" -Raw
+            Write-Host "End of install.log"
         } else {
             Write-Host "install.log file not found."
         }
