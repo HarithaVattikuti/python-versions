@@ -83,7 +83,25 @@ if (Test-Path $PythonArchPath) {
     Write-Host "Cleaning up previous Python install at $PythonArchPath"
     Remove-Item -Path $PythonArchPath -Recurse -Force
 }
+# Extra: Remove all possible Python registry uninstall entries (x86/x64/ARM64)
+$allPythonUninstallRegKeys = @(
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+)
+foreach ($regKey in $allPythonUninstallRegKeys) {
+    Write-Host "Cleaning up previous Python install at regkey: $regKey "
 
+    if (Test-Path $regKey) {
+        Get-ChildItem $regKey | Where-Object {
+            try { $_.GetValue("DisplayName") -like "Python*" } catch { $false }
+        } | ForEach-Object {
+            Write-Host $_.PsPath
+            Remove-Item $_.PsPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
 $IsMSI = $PythonExecName -match "msi"
 $IsFreeThreaded = $Architecture -match "-freethreaded"
 
@@ -143,8 +161,16 @@ if ($systemArchitecture -notmatch "ARM64" -or $processorArchitecture -notmatch "
 }
 
 try {
-    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /passive /norestart /log install.log"
+    # $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /passive /norestart /log install.log"
 
+    # Add extra MSI logging for deep troubleshooting
+    $msiLog = "$PythonArchPath\msi-verbose.log"
+    if ($IsMSI) {
+        $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log /L*V `"$msiLog`""
+    } else {
+        $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log"
+    }
+    
     Write-Host "Executing command: $installCommand"
 
     $installOutput = cmd.exe /c $installCommand 2>&1
