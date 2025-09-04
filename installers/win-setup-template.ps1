@@ -116,6 +116,35 @@ foreach ($dir in $dirsToClean) {
     Get-ChildItem -Path $dir -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 }
 
+# Extra registry cleanup for Python, in addition to your Remove-RegistryEntries
+$pythonRegKeys = @(
+    "HKLM:\SOFTWARE\Python",
+    "HKCU:\SOFTWARE\Python",
+    "HKLM:\SOFTWARE\WOW6432Node\Python",
+    "HKCU:\SOFTWARE\WOW6432Node\Python"
+)
+foreach ($regKey in $pythonRegKeys) {
+    try {
+        if (Test-Path $regKey) {
+            Write-Host "Cleaning registry: $regKey"
+            Remove-Item -Path $regKey -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    } catch { Write-Host "Error cleaning registry $regKey: $_" }
+}
+
+Write-Host "User: $env:USERNAME"
+Write-Host "User Profile: $env:USERPROFILE"
+Write-Host "Processor Architecture: $env:PROCESSOR_ARCHITECTURE"
+Write-Host "OS Version: $([System.Environment]::OSVersion.Version)"
+Write-Host "IsAdmin: $([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))"
+
+Write-Host "Recent MSIInstaller Events:"
+Get-WinEvent -FilterHashtable @{
+    LogName = 'Application'
+    ProviderName = 'MsiInstaller'
+    StartTime = (Get-Date).AddMinutes(-15)
+} | Select-Object -Property TimeCreated, Message | Format-List
+
 # Before install
 $packageCache = "C:\ProgramData\Package Cache"
 if (Test-Path $packageCache) {
