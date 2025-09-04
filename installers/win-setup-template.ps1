@@ -103,6 +103,19 @@ foreach ($regKey in $allPythonUninstallRegKeys) {
     }
 }
 
+# Remove additional cache and program files directories before install
+$dirsToClean = @(
+    "C:\Program Files\Python*",
+    "C:\Program Files (x86)\Python*",
+    "$env:APPDATA\Python*",
+    "$env:LOCALAPPDATA\Python*",
+    "C:\Users\runneradmin\AppData\Local\Package Cache"
+)
+foreach ($dir in $dirsToClean) {
+    Write-Host "Clean the dir: $dir"
+    Get-ChildItem -Path $dir -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 # Before install
 $packageCache = "C:\ProgramData\Package Cache"
 if (Test-Path $packageCache) {
