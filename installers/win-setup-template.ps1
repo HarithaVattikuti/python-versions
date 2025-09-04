@@ -78,6 +78,12 @@ $PythonToolcachePath = Join-Path -Path $ToolcacheRoot -ChildPath "Python"
 $PythonVersionPath = Join-Path -Path $PythonToolcachePath -ChildPath $Version
 $PythonArchPath = Join-Path -Path $PythonVersionPath -ChildPath $Architecture
 
+# Clean previous install for the target architecture and version
+if (Test-Path $PythonArchPath) {
+    Write-Host "Cleaning up previous Python install at $PythonArchPath"
+    Remove-Item -Path $PythonArchPath -Recurse -Force
+}
+
 $IsMSI = $PythonExecName -match "msi"
 $IsFreeThreaded = $Architecture -match "-freethreaded"
 
@@ -139,7 +145,8 @@ if ($systemArchitecture -notmatch "ARM64" -or $processorArchitecture -notmatch "
 }
 
 try {
-    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log"
+    $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /passive /norestart /log install.log"
+
     Write-Host "Executing command: $installCommand"
 
     $installOutput = cmd.exe /c $installCommand 2>&1
