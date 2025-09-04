@@ -129,7 +129,7 @@ foreach ($regKey in $pythonRegKeys) {
             Write-Host "Cleaning registry: $regKey"
             Remove-Item -Path $regKey -Recurse -Force -ErrorAction SilentlyContinue
         }
-    } catch { Write-Host "Error cleaning registry $regKey: $_" }
+    } catch { Write-Host "Error cleaning registry $regKey: $($_.Exception.Message)" }
 }
 
 Write-Host "User: $env:USERNAME"
