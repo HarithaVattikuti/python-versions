@@ -1,21 +1,23 @@
-{
-  "version": "3.11.6",
-  "stable": true,
-  "release_url": "https://github.com/lmvysakh/python-versions/releases/tag/3.11.6-18464887971",
-  "files": [
-    {
-      "filename": "python-3.11.6-linux-24.04-arm64.tar.gz",
-      "arch": "arm64",
-      "platform": "linux",
-      "platform_version": "24.04",
-      "download_url": "https://github.com/lmvysakh/python-versions/releases/download/3.11.6-18464887971/python-3.11.6-linux-24.04-arm64.tar.gz"
-    },
-    {
-      "filename": "python-3.11.6-linux-24.04-x64.tar.gz",
-      "arch": "x64",
-      "platform": "linux",
-      "platform_version": "24.04",
-      "download_url": "https://github.com/lmvysakh/python-versions/releases/download/3.11.6-18464887971/python-3.11.6-linux-24.04-x64.tar.gz"
-    }
-  ]
-}
+[
+  {
+    "version": "3.11.6",
+    "stable": true,
+    "release_url": "https://github.com/lmvysakh/python-versions/releases/tag/3.11.6-18464887971",
+    "files": [
+      {
+        "filename": "python-3.11.6-linux-24.04-arm64.tar.gz",
+        "arch": "arm64",
+        "platform": "linux",
+        "platform_version": "24.04",
+        "download_url": "https://github.com/lmvysakh/python-versions/releases/download/3.11.6-18464887971/python-3.11.6-linux-24.04-arm64.tar.gz"
+      },
+      {
+        "filename": "python-3.11.6-linux-24.04-x64.tar.gz",
+        "arch": "x64",
+        "platform": "linux",
+        "platform_version": "24.04",
+        "download_url": "https://github.com/lmvysakh/python-versions/releases/download/3.11.6-18464887971/python-3.11.6-linux-24.04-x64.tar.gz"
+      }
+    ]
+  }
+]
