@@ -45,7 +45,7 @@ jobs:
         id: generate-matrix
         run: |
           [String[]]$configurations = "${{ inputs.platforms || 'ubuntu-22.04,ubuntu-22.04_arm64,ubuntu-24.04,ubuntu-24.04_arm64,macos-15-intel,macos-14_arm64,windows-2022_x64,windows-2022_x86,windows-11_arm64' }}".Split(",").Trim()
-          [String[]]$buildModes = "${{ inputs.threading_build_modes || 'default' }}".Split(",").Trim()
+          [String[]]$buildModes = "${{ inputs.threading_build_modes || 'default,freethreaded' }}".Split(",").Trim()
           $matrix = @()
           
           foreach ($configuration in $configurations) {
