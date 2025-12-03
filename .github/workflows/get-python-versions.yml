@@ -6,7 +6,7 @@ on:
 
 jobs:
   get-new-python-versions:
-    uses: actions/versions-package-tools/.github/workflows/get-new-tool-versions.yml@main
+    uses: HarithaVattikuti/versions-package-tools/.github/workflows/get-new-tool-versions.yml@TestPatch
     with:
       tool-name: "Python"
       image-url: "https://avatars.githubusercontent.com/u/1525981?s=200&v=4"
