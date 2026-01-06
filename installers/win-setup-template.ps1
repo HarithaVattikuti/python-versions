@@ -124,8 +124,20 @@ Get-ChildItem -Path $PythonArchPath -Recurse | ForEach-Object {
 }
 
 Write-Host "System architecture:"
-$systemArchitecture = (Get-CimInstance -ClassName Win32_ComputerSystem).SystemType
-Write-Host $systemArchitecture
+$processorIdentifier = $env:PROCESSOR_IDENTIFIER
+Write-Host $processorIdentifier
+
+# Optionally, determine the architecture type for conditional logic:
+if ($processorIdentifier -match "ARMv8" -or $processorIdentifier -match "ARM64") {
+    $arch = "ARM64"
+} elseif ($processorIdentifier -match "x86") {
+    $arch = "x86"
+} elseif ($processorIdentifier -match "AMD64") {
+    $arch = "AMD64"
+} else {
+    $arch = "Unknown"
+}
+Write-Host "Detected architecture for installer selection: $arch"
 
 # Path to the installer executable
 $InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
