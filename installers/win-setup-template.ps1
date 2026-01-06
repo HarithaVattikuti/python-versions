@@ -126,7 +126,10 @@ Get-ChildItem -Path $PythonArchPath -Recurse | ForEach-Object {
 Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
 
-cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
+#cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
+Write-Host "Executing Python installation..."
+cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart"
+
 if ($LASTEXITCODE -ne 0) {
     Throw "Error happened during Python installation"
 }
@@ -137,8 +140,14 @@ if ($IsFreeThreaded) {
     New-Item -Path "$PythonArchPath\python.exe" -ItemType SymbolicLink -Value "$PythonArchPath\python${MajorVersion}.${MinorVersion}t.exe"
 }
 
-Get-ChildItem -Path "C:\hostedtoolcache\windows\Python\" -Recurse -Filter "python.exe" -ErrorAction SilentlyContinue | ForEach-Object {
-    Write-Host "python.exe found in: $($_.DirectoryName)"
+Write-Host "Checking if python.exe exists in $PythonArchPath..."
+if (-Not (Test-Path "$PythonArchPath\python.exe")) {
+    Write-Host "Error: python.exe not found in $PythonArchPath. Installation might have failed."
+    Write-Host "Files in $PythonArchPath after installation:"
+    Get-ChildItem -Path $PythonArchPath | ForEach-Object {
+        Write-Host $_.FullName
+    }
+    Throw "Python installation failed or python.exe is missing."
 }
 
 Write-Host "Create `python3` symlink"
