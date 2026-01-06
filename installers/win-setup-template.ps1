@@ -140,15 +140,33 @@ if ($processorIdentifier -match "ARMv8" -or $processorIdentifier -match "ARM64")
 Write-Host "Detected architecture for installer selection: $arch"
 
 # Path to the installer executable
-$InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
+# $InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
 
 # Verify if dumpbin is available
-if (Get-Command "dumpbin" -ErrorAction SilentlyContinue) {
-    Write-Host "Dumpbin utility found. Inspecting installer architecture..."
-    dumpbin /headers $InstallerPath | Select-String "machine"
-} else {
-    Write-Host "Dumpbin utility not found. Ensure Visual Studio or the Windows SDK is installed."
+# if (Get-Command "dumpbin" -ErrorAction SilentlyContinue) {
+#     Write-Host "Dumpbin utility found. Inspecting installer architecture..."
+#     dumpbin /headers $InstallerPath | Select-String "machine"
+# } else {
+#     Write-Host "Dumpbin utility not found. Ensure Visual Studio or the Windows SDK is installed."
+# }
+
+# Check if the script is running as administrator
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "This script requires administrative privileges. Restarting with elevated privileges..."
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    Exit
 }
+
+Write-Host "Script is running with administrative privileges."
+
+# Path to the installer executable
+$InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
+
+# Run the installer with admin rights
+Write-Host "Running the installer with administrative privileges..."
+Start-Process -FilePath $InstallerPath -ArgumentList "/quiet /norestart /log install.log" -Verb RunAs -Wait
+
+Write-Host "Installer execution completed."
 
 Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
