@@ -159,14 +159,14 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 Write-Host "Script is running with administrative privileges."
 
-# Path to the installer executable
-$InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
+# # Path to the installer executable
+# $InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
 
-# Run the installer with admin rights
-Write-Host "Running the installer with administrative privileges..."
-Start-Process -FilePath $InstallerPath -ArgumentList "/quiet /norestart /log install.log" -Verb RunAs -Wait
+# # Run the installer with admin rights
+# Write-Host "Running the installer with administrative privileges..."
+# Start-Process -FilePath $InstallerPath -ArgumentList "/quiet /norestart /log install.log" -Verb RunAs -Wait
 
-Write-Host "Installer execution completed."
+# Write-Host "Installer execution completed."
 
 Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
