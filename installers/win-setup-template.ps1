@@ -118,6 +118,11 @@ New-Item -ItemType Directory -Path $PythonArchPath -Force | Out-Null
 Write-Host "Copy Python binaries to $PythonArchPath"
 Copy-Item -Path ./$PythonExecName -Destination $PythonArchPath | Out-Null
 
+Write-Host "Files in $PythonArchPath"
+Get-ChildItem -Path $PythonArchPath -Recurse | ForEach-Object {
+    Write-Host $_.FullName
+}
+
 Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
 
@@ -130,6 +135,10 @@ if ($IsFreeThreaded) {
     # Delete python.exe and create a symlink to free-threaded exe
     Remove-Item -Path "$PythonArchPath\python.exe" -Force
     New-Item -Path "$PythonArchPath\python.exe" -ItemType SymbolicLink -Value "$PythonArchPath\python${MajorVersion}.${MinorVersion}t.exe"
+}
+
+Get-ChildItem -Path "C:\hostedtoolcache\windows\Python\" -Recurse -Filter "python.exe" -ErrorAction SilentlyContinue | ForEach-Object {
+    Write-Host "python.exe found in: $($_.DirectoryName)"
 }
 
 Write-Host "Create `python3` symlink"
