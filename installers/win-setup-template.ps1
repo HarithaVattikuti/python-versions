@@ -177,7 +177,7 @@ $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -Pyth
 
 $installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log /verbose"
 Write-Host "Executing Python installer..."
-cmd.exe /c $installCommand
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c $installCommand" -Verb RunAs -Wait
 
 Write-Host "Checking for installer logs..."
 if (Test-Path "$PythonArchPath\install.log") {
