@@ -123,6 +123,21 @@ Get-ChildItem -Path $PythonArchPath -Recurse | ForEach-Object {
     Write-Host $_.FullName
 }
 
+Write-Host "System architecture:"
+$systemArchitecture = (Get-CimInstance -ClassName Win32_ComputerSystem).SystemType
+Write-Host $systemArchitecture
+
+# Path to the installer executable
+$InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
+
+# Verify if dumpbin is available
+if (Get-Command "dumpbin" -ErrorAction SilentlyContinue) {
+    Write-Host "Dumpbin utility found. Inspecting installer architecture..."
+    dumpbin /headers $InstallerPath | Select-String "machine"
+} else {
+    Write-Host "Dumpbin utility not found. Ensure Visual Studio or the Windows SDK is installed."
+}
+
 Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
 
@@ -130,7 +145,7 @@ $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -Pyth
 # Write-Host "Executing Python installation..."
 # cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart"
 
-$installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log"
+$installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log /verbose"
 Write-Host "Executing Python installer..."
 cmd.exe /c $installCommand
 
