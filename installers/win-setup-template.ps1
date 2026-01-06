@@ -127,8 +127,21 @@ Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
 
 #cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
-Write-Host "Executing Python installation..."
-cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart"
+# Write-Host "Executing Python installation..."
+# cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart"
+
+$installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log"
+Write-Host "Executing Python installer..."
+cmd.exe /c $installCommand
+
+Write-Host "Checking for installer logs..."
+if (Test-Path "$PythonArchPath\install.log") {
+    Write-Host "Installer log found at $PythonArchPath\install.log"
+    Write-Host "Contents of install.log:"
+    Get-Content "$PythonArchPath\install.log" -Tail 50
+} else {
+    Write-Host "Installer log not found. Check %TEMP% or other directories."
+}
 
 if ($LASTEXITCODE -ne 0) {
     Throw "Error happened during Python installation"
@@ -147,6 +160,12 @@ if (-Not (Test-Path "$PythonArchPath\python.exe")) {
     Get-ChildItem -Path $PythonArchPath | ForEach-Object {
         Write-Host $_.FullName
     }
+    # Search for python.exe across the system
+    Write-Host "Searching for python.exe across the system..."
+    Get-ChildItem -Path C:\ -Recurse -Filter "python.exe" -ErrorAction SilentlyContinue | ForEach-Object {
+        Write-Host "python.exe found in: $($_.FullName)"
+    }
+
     Throw "Python installation failed or python.exe is missing."
 }
 
