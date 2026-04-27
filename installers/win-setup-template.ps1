@@ -86,7 +86,7 @@ $MinorVersion = $Version.Split('.')[1]
 
 Write-Host "Check if Python hostedtoolcache folder exist..."
 if (-Not (Test-Path $PythonToolcachePath)) {
-    Write-Host "Create Python toolcache folder"
+    Write-Host "Create Python toolcache folder - $PythonToolcachePath.."
     New-Item -ItemType Directory -Path $PythonToolcachePath | Out-Null
 }
 
