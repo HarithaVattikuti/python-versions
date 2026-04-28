@@ -10,7 +10,12 @@ function Get-RegistryVersionFilter {
         [Parameter(Mandatory)][Int32] $MinorVersion
     )
 
-    $archFilter = if ($Architecture -eq 'x86') { "32-bit" } else { "64-bit" }
+    # ARM64 Python installer registers as "(ARM64)" in the display name, not "(64-bit)"
+    $archFilter = switch ($Architecture) {
+        'x86'   { "32-bit" }
+        'arm64' { "64-bit|ARM64" }
+        default { "64-bit" }
+    }
     "Python $MajorVersion.$MinorVersion.*($archFilter)"
 }
 
@@ -21,13 +26,19 @@ function Remove-RegistryEntries {
         [Parameter(Mandatory)][Int32] $MinorVersion
     )
 
+    $archtestFilter = if ($HardwareArchitecture -eq 'x86') { "32-bit" } else { "64-bit" }
+    write-host "Hardware architecture: $HardwareArchitecture, arch filter for registry key search: $archtestFilter"
+
     $versionFilter = Get-RegistryVersionFilter -Architecture $HardwareArchitecture -MajorVersion $MajorVersion -MinorVersion $MinorVersion
+
+    Write-Host "version filter: $versionFilter"
 
     $regPath = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products"
     if (Test-Path -Path Registry::$regPath) {
         $regKeys = Get-ChildItem -Path Registry::$regPath -Recurse | Where-Object Property -Ccontains DisplayName
         foreach ($key in $regKeys) {
             if ($key.getValue("DisplayName") -match $versionFilter) {
+                Write-Host "Remove key in HKEY_LOCAL_MACHINE : $key"
                 Remove-Item -Path $key.PSParentPath -Recurse -Force -Verbose
             }
         }
@@ -36,6 +47,7 @@ function Remove-RegistryEntries {
     $regPath = "HKEY_CLASSES_ROOT\Installer\Products"
     if (Test-Path -Path Registry::$regPath) {
         Get-ChildItem -Path Registry::$regPath | Where-Object { $_.GetValue("ProductName") -match $versionFilter } | ForEach-Object {
+            Write-Host "Remove key in HKEY_CLASSES_ROOT : $_"
             Remove-Item Registry::$_ -Recurse -Force -Verbose
         }
     }
@@ -49,6 +61,7 @@ function Remove-RegistryEntries {
 
     $uninstallRegistrySections | Where-Object { Test-Path -Path Registry::$_ } | ForEach-Object {
         Get-ChildItem -Path Registry::$_ | Where-Object { $_.getValue("DisplayName") -match $versionFilter } | ForEach-Object {
+                Write-Host "Remove key in uninstallRegistrySections $($_) : $_"
             Remove-Item Registry::$_ -Recurse -Force -Verbose
         }
     }
@@ -86,23 +99,17 @@ $MinorVersion = $Version.Split('.')[1]
 
 Write-Host "Check if Python hostedtoolcache folder exist..."
 if (-Not (Test-Path $PythonToolcachePath)) {
-    Write-Host "Create Python toolcache folder - $PythonToolcachePath.."
+    Write-Host "Create Python toolcache folder"
     New-Item -ItemType Directory -Path $PythonToolcachePath | Out-Null
 }
 
 Write-Host "Check if current Python version is installed..."
 $InstalledVersions = Get-Item "$PythonToolcachePath\$MajorVersion.$MinorVersion.*\$Architecture"
-$InstalledPatchVersions = Get-Item "$PythonToolcachePath\$MajorVersion.$MinorVersion.*"
 
 if ($null -ne $InstalledVersions) {
     Write-Host "Python$MajorVersion.$MinorVersion ($Architecture) was found in $PythonToolcachePath..."
 
     foreach ($InstalledVersion in $InstalledVersions) {
-        $exe = Join-Path -Path $InstalledVersion -ChildPath "python.exe"
-        if (Test-Path -Path $exe) {
-            Write-Host "Uninstalling Python using $exe..."
-            Start-Process -FilePath $exe -ArgumentList @('/uninstall', '/quiet') -Wait
-        }
         if (Test-Path -Path $InstalledVersion) {
             Write-Host "Deleting $InstalledVersion..."
             Remove-Item -Path $InstalledVersion -Recurse -Force
@@ -110,13 +117,6 @@ if ($null -ne $InstalledVersions) {
                 Remove-Item -Path "$($InstalledVersion.Parent.FullName)/${Architecture}.complete" -Force -Verbose
             }
         }
-    }
-
-    if ($null -ne $InstalledPatchVersions -and (Test-Path -Path $InstalledPatchVersions)) {
-        Write-Host "Deleting entire version folder: $InstalledPatchVersions..."
-        Remove-Item -Path $InstalledPatchVersions -Recurse -Force
-    } else {
-        Write-Host "Version folder $InstalledPatchVersions does not exist."
     }
 } else {
     Write-Host "No Python$MajorVersion.$MinorVersion.* found"
@@ -131,76 +131,10 @@ New-Item -ItemType Directory -Path $PythonArchPath -Force | Out-Null
 Write-Host "Copy Python binaries to $PythonArchPath"
 Copy-Item -Path ./$PythonExecName -Destination $PythonArchPath | Out-Null
 
-Write-Host "Files in $PythonArchPath"
-Get-ChildItem -Path $PythonArchPath -Recurse | ForEach-Object {
-    Write-Host $_.FullName
-}
-
-Write-Host "System architecture:"
-$processorIdentifier = $env:PROCESSOR_IDENTIFIER
-Write-Host $processorIdentifier
-
-# Optionally, determine the architecture type for conditional logic:
-if ($processorIdentifier -match "ARMv8" -or $processorIdentifier -match "ARM64") {
-    $arch = "ARM64"
-} elseif ($processorIdentifier -match "x86") {
-    $arch = "x86"
-} elseif ($processorIdentifier -match "AMD64") {
-    $arch = "AMD64"
-} else {
-    $arch = "Unknown"
-}
-Write-Host "Detected architecture for installer selection: $arch"
-
-# Path to the installer executable
-# $InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
-
-# Verify if dumpbin is available
-# if (Get-Command "dumpbin" -ErrorAction SilentlyContinue) {
-#     Write-Host "Dumpbin utility found. Inspecting installer architecture..."
-#     dumpbin /headers $InstallerPath | Select-String "machine"
-# } else {
-#     Write-Host "Dumpbin utility not found. Ensure Visual Studio or the Windows SDK is installed."
-# }
-
-# Check if the script is running as administrator
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Host "This script requires administrative privileges. Restarting with elevated privileges..."
-    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-    Exit
-}
-
-Write-Host "Script is running with administrative privileges."
-
-# # Path to the installer executable
-# $InstallerPath = "C:\hostedtoolcache\windows\Python\3.12.10\arm64\python-3.12.10-arm64.exe"
-
-# # Run the installer with admin rights
-# Write-Host "Running the installer with administrative privileges..."
-# Start-Process -FilePath $InstallerPath -ArgumentList "/quiet /norestart /log install.log" -Verb RunAs -Wait
-
-# Write-Host "Installer execution completed."
-
 Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
 
-#cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
-# Write-Host "Executing Python installation..."
-# cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart"
-
-$installCommand = "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet /norestart /log install.log /verbose"
-Write-Host "Executing Python installer..."
-Start-Process -FilePath "cmd.exe" -ArgumentList "/c $installCommand" -Verb RunAs -Wait
-
-Write-Host "Checking for installer logs..."
-if (Test-Path "$PythonArchPath\install.log") {
-    Write-Host "Installer log found at $PythonArchPath\install.log"
-    Write-Host "Contents of install.log:"
-    Get-Content "$PythonArchPath\install.log" -Tail 50
-} else {
-    Write-Host "Installer log not found. Check %TEMP% or other directories."
-}
-
+cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
 if ($LASTEXITCODE -ne 0) {
     Throw "Error happened during Python installation"
 }
@@ -209,22 +143,6 @@ if ($IsFreeThreaded) {
     # Delete python.exe and create a symlink to free-threaded exe
     Remove-Item -Path "$PythonArchPath\python.exe" -Force
     New-Item -Path "$PythonArchPath\python.exe" -ItemType SymbolicLink -Value "$PythonArchPath\python${MajorVersion}.${MinorVersion}t.exe"
-}
-
-Write-Host "Checking if python.exe exists in $PythonArchPath..."
-if (-Not (Test-Path "$PythonArchPath\python.exe")) {
-    Write-Host "Error: python.exe not found in $PythonArchPath. Installation might have failed."
-    Write-Host "Files in $PythonArchPath after installation:"
-    Get-ChildItem -Path $PythonArchPath | ForEach-Object {
-        Write-Host $_.FullName
-    }
-    # Search for python.exe across the system
-    Write-Host "Searching for python.exe across the system..."
-    Get-ChildItem -Path C:\ -Recurse -Filter "python.exe" -ErrorAction SilentlyContinue | ForEach-Object {
-        Write-Host "python.exe found in: $($_.FullName)"
-    }
-
-    Throw "Python installation failed or python.exe is missing."
 }
 
 Write-Host "Create `python3` symlink"
