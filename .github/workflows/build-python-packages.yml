@@ -249,7 +249,7 @@ jobs:
           python-version: |
             ${{ inputs.VERSION }}
             ${{ inputs.VERSION }}t
-          architecture: “arm64”
+          architecture: "arm64"
           
       # Verify both installations 
       - name: Verify normal and freethreaded Python
