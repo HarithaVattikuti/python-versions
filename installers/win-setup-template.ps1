@@ -26,19 +26,12 @@ function Remove-RegistryEntries {
         [Parameter(Mandatory)][Int32] $MinorVersion
     )
 
-    $archtestFilter = if ($HardwareArchitecture -eq 'x86') { "32-bit" } else { "64-bit" }
-    write-host "Hardware architecture: $HardwareArchitecture, arch filter for registry key search: $archtestFilter"
-
     $versionFilter = Get-RegistryVersionFilter -Architecture $HardwareArchitecture -MajorVersion $MajorVersion -MinorVersion $MinorVersion
-
-    Write-Host "version filter: $versionFilter"
 
     $regPath = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products"
     if (Test-Path -Path Registry::$regPath) {
         $regKeys = Get-ChildItem -Path Registry::$regPath -Recurse | Where-Object Property -Ccontains DisplayName
         foreach ($key in $regKeys) {
-            $displayName = $key.getValue("DisplayName")
-            Write-Host "Remove key in HKEY_LOCAL_MACHINE : $displayName"
             if ($key.getValue("DisplayName") -match $versionFilter) {
                 Remove-Item -Path $key.PSParentPath -Recurse -Force -Verbose
             }
@@ -47,10 +40,6 @@ function Remove-RegistryEntries {
 
     $regPath = "HKEY_CLASSES_ROOT\Installer\Products"
     if (Test-Path -Path Registry::$regPath) {
-        Get-ChildItem -Path Registry::$regPath | ForEach-Object {
-                $productName = $_.GetValue("ProductName")
-                Write-Host "Product Name: $productName"
-        }
         Get-ChildItem -Path Registry::$regPath | Where-Object { $_.GetValue("ProductName") -match $versionFilter } | ForEach-Object {
             Remove-Item Registry::$_ -Recurse -Force -Verbose
         }
@@ -66,10 +55,6 @@ function Remove-RegistryEntries {
     
 
     $uninstallRegistrySections | Where-Object { Test-Path -Path Registry::$_ } | ForEach-Object {
-        Get-ChildItem -Path Registry::$_ | ForEach-Object {
-            $displayName = $_.GetValue("DisplayName")
-            Write-Host "DisplayName: $displayName"
-        }
         Get-ChildItem -Path Registry::$_ | Where-Object { $_.getValue("DisplayName") -match $versionFilter } | ForEach-Object {
             Remove-Item Registry::$_ -Recurse -Force -Verbose
         }
