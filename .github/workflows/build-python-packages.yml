@@ -257,14 +257,11 @@ jobs:
         run: |
           $version = "${{ env.PYTHON_VERSION }}"
           $basePath = $env:AGENT_TOOLSDIRECTORY
-          Write-Host "AGENT_TOOLSDIRECTORY: $basePath"
           if ([string]::IsNullOrEmpty($basePath)) { $basePath = $env:RUNNER_TOOL_CACHE }
-          Write-Host "RUNNER_TOOL_CACHE: $basePath"
           if ([string]::IsNullOrEmpty($basePath)) { $basePath = "C:\hostedtoolcache\windows\Python" }
-          Write-Host "Default Path: $basePath"
 
           Write-Host "Check normal Python:"
-          $defaultPy = Join-Path -Path $basePath -ChildPath "$version\arm64\python.exe"
+          $defaultPy = Join-Path -Path $basePath -ChildPath "Python\$version\arm64\python.exe"
           if (Test-Path $defaultPy) {
             & $defaultPy -VVV
             & $defaultPy -c 'print("default threading:", not hasattr(__import__("sys"), "_isfreethreaded") or not __import__("sys")._isfreethreaded)'
@@ -274,7 +271,7 @@ jobs:
           }
 
           Write-Host "Check freethreaded Python:"
-          $ftPy = Join-Path -Path $basePath -ChildPath "$version\arm64-freethreaded\python.exe"
+          $ftPy = Join-Path -Path $basePath -ChildPath "Python\$version\arm64-freethreaded\python.exe"
           if (Test-Path $ftPy) {
             & $ftPy -VVV
             & $ftPy -c 'print("freethreaded:", getattr(__import__("sys"), "_isfreethreaded", False))'
