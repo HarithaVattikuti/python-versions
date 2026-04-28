@@ -191,7 +191,9 @@ jobs:
 
   test_python_windows_11_arm_both:
     name: Test both normal and free-threaded on Windows 11 ARM
+    needs: [generate_matrix, build_python, test_python]
     runs-on: windows-11-arm
+    if: ${{ (inputs.VERSION && inputs.VERSION > '3.13.0') || (!inputs.VERSION && '3.13.7' > '3.13.0') }}
     env:
       PYTHON_VERSION: ${{ inputs.VERSION || '3.13.7' }}
       ARTIFACT_NAME_DEFAULT: python-${{ inputs.VERSION || '3.13.7' }}-win32-arm64
@@ -245,8 +247,8 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: |
-            ${{ env.ARTIFACT_NAME_DEFAULT }}
-            ${{ env.ARTIFACT_NAME_FREETHREADED }}
+            ${{ inputs.VERSION }}
+            ${{ inputs.VERSION }}t
           architecture: “arm64”
           
       # Verify both installations 
