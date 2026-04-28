@@ -136,12 +136,12 @@ jobs:
                 $PythonToolCachePath = "C:\hostedtoolcache\windows"
             }
 
-            $exe = Join-Path -Path "$env:PythonToolcachePath\$env:PythonVersion\$env:Architecture" -ChildPath "python-$env:PythonVersion-$env:Architecture.exe"
+            $exe = Join-Path -Path "$PythonToolCachePath\$env:PythonVersion\$env:Architecture" -ChildPath "python-$env:PythonVersion-$env:Architecture.exe"
             if (Test-Path $exe) {
               Write-Host "Uninstalling Python using $exe..."
               Start-Process -FilePath $exe -ArgumentList @('/uninstall', '/quiet') -Wait
             }
-            $dir = Join-Path -Path "$env:PythonToolcachePath" -ChildPath "$env:PythonVersion"
+            $dir = Join-Path -Path "$PythonToolCachePath" -ChildPath "$env:PythonVersion"
             if (Test-Path $dir) {
               Write-Host "Removing Python directory: $dir..."
               Remove-Item -Recurse -Force $dir
