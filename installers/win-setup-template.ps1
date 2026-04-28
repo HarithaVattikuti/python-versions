@@ -37,8 +37,9 @@ function Remove-RegistryEntries {
     if (Test-Path -Path Registry::$regPath) {
         $regKeys = Get-ChildItem -Path Registry::$regPath -Recurse | Where-Object Property -Ccontains DisplayName
         foreach ($key in $regKeys) {
+            $displayName = $key.getValue("DisplayName")
+            Write-Host "Remove key in HKEY_LOCAL_MACHINE : $displayName"
             if ($key.getValue("DisplayName") -match $versionFilter) {
-                Write-Host "Remove key in HKEY_LOCAL_MACHINE : $key"
                 Remove-Item -Path $key.PSParentPath -Recurse -Force -Verbose
             }
         }
@@ -46,8 +47,11 @@ function Remove-RegistryEntries {
 
     $regPath = "HKEY_CLASSES_ROOT\Installer\Products"
     if (Test-Path -Path Registry::$regPath) {
+        Get-ChildItem -Path Registry::$regPath | ForEach-Object {
+                $productName = $_.GetValue("ProductName")
+                Write-Host "Product Name: $productName"
+        }
         Get-ChildItem -Path Registry::$regPath | Where-Object { $_.GetValue("ProductName") -match $versionFilter } | ForEach-Object {
-            Write-Host "Remove key in HKEY_CLASSES_ROOT : $_"
             Remove-Item Registry::$_ -Recurse -Force -Verbose
         }
     }
@@ -59,9 +63,13 @@ function Remove-RegistryEntries {
         "HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"  # all users, x86
     )
 
+    
+}
     $uninstallRegistrySections | Where-Object { Test-Path -Path Registry::$_ } | ForEach-Object {
+        Get-ChildItem -Path Registry::$_ | ForEach-Object {
+            $displayName = $_.GetValue("DisplayName")
+            Write-Host "DisplayName: $displayName"
         Get-ChildItem -Path Registry::$_ | Where-Object { $_.getValue("DisplayName") -match $versionFilter } | ForEach-Object {
-                Write-Host "Remove key in uninstallRegistrySections $($_) : $_"
             Remove-Item Registry::$_ -Recurse -Force -Verbose
         }
     }
