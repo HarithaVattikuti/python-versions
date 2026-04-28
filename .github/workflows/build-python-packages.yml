@@ -121,16 +121,38 @@ jobs:
       #   run: ./helpers/clean-toolcache.ps1 -ToolName "Python"
 
       - name: Cleanup Python installations
+        shell: pwsh
         run: |
-          $targetPath = $env:AGENT_TOOLSDIRECTORY
-          if ([string]::IsNullOrEmpty($targetPath)) {
-              $targetPath = $env:RUNNER_TOOL_CACHE
-          }
-          $pythonPath = Join-Path $targetPath "Python"
-          if (Test-Path $pythonPath) {
-              Write-Host "Removing existing Python installations - $pythonPath..."
-              Get-ChildItem -Path $pythonPath -Recurse | Where-Object { $_.LinkType -eq "SymbolicLink" } | ForEach-Object { $_.Delete() }
-              Remove-Item -Path $pythonPath -Recurse -Force
+          Write-Host "Check if current Python version is installed..."
+          $InstalledVersions = Get-Item "$env:PythonToolcachePath\$env:MajorVersion.$env:MinorVersion.*\$env:Architecture"
+          $InstalledPatchVersions = Get-Item "$env:PythonToolcachePath\$env:MajorVersion.$env:MinorVersion.*"
+
+          if ($null -ne $InstalledVersions) {
+              Write-Host "Python$env:MajorVersion.$env:MinorVersion ($env:Architecture) was found in $env:PythonToolcachePath..."
+
+              foreach ($InstalledVersion in $InstalledVersions) {
+                  $exe = Join-Path -Path $InstalledVersion -ChildPath "python.exe"
+                  if (Test-Path -Path $exe) {
+                      Write-Host "Uninstalling Python using $exe..."
+                      Start-Process -FilePath $exe -ArgumentList @('/uninstall', '/quiet') -Wait
+                  }
+                  if (Test-Path -Path $InstalledVersion) {
+                      Write-Host "Deleting $InstalledVersion..."
+                      Remove-Item -Path $InstalledVersion -Recurse -Force
+                      if (Test-Path -Path "$($InstalledVersion.Parent.FullName)/${env:Architecture}.complete") {
+                          Remove-Item -Path "$($InstalledVersion.Parent.FullName)/${env:Architecture}.complete" -Force -Verbose
+                      }
+                  }
+              }
+
+              if ($null -ne $InstalledPatchVersions -and (Test-Path -Path $InstalledPatchVersions)) {
+                  Write-Host "Deleting entire version folder: $InstalledPatchVersions..."
+                  Remove-Item -Path $InstalledPatchVersions -Recurse -Force
+              } else {
+                  Write-Host "Version folder $InstalledPatchVersions does not exist."
+              }
+          } else {
+              Write-Host "No Python$env:MajorVersion.$env:MinorVersion.* found"
           }
 
       - name: Delete macOS /Library/Frameworks/Python.framework
