@@ -126,22 +126,26 @@ jobs:
           PythonVersion: ${{ env.VERSION }}
           Architecture: ${{ matrix.arch }}
         run: |
-          $PythonToolCachePath = $env:AGENT_TOOLSDIRECTORY
-          if ([string]::IsNullOrEmpty($PythonToolCachePath)) {
-              # GitHub Windows images don't have `AGENT_TOOLSDIRECTORY` variable
-              $PythonToolCachePath = $env:RUNNER_TOOL_CACHE
-          }
+           $PythonToolCachePath = $env:AGENT_TOOLSDIRECTORY
+            if ([string]::IsNullOrEmpty($PythonToolCachePath)) {
+                # GitHub Windows images don't have `AGENT_TOOLSDIRECTORY` variable
+                $PythonToolCachePath = $env:RUNNER_TOOL_CACHE
+            }
+            if ([string]::IsNullOrEmpty($PythonToolCachePath)) {
+                # Final fallback to a default path
+                $PythonToolCachePath = "C:\hostedtoolcache\windows"
+            }
 
-          $exe = Join-Path -Path "$env:PythonToolcachePath\$env:PythonVersion\$env:Architecture" -ChildPath "python-$env:PythonVersion-$env:Architecture.exe"
-          if (Test-Path $exe) {
-            Write-Host "Uninstalling Python using $exe..."
-            Start-Process -FilePath $exe -ArgumentList @('/uninstall', '/quiet') -Wait
-          }
-          $dir = Join-Path -Path "$env:PythonToolcachePath" -ChildPath "$env:PythonVersion"
-          if (Test-Path $dir) {
-            Write-Host "Removing Python directory: $dir..."
-            Remove-Item -Recurse -Force $dir
-          }
+            $exe = Join-Path -Path "$env:PythonToolcachePath\$env:PythonVersion\$env:Architecture" -ChildPath "python-$env:PythonVersion-$env:Architecture.exe"
+            if (Test-Path $exe) {
+              Write-Host "Uninstalling Python using $exe..."
+              Start-Process -FilePath $exe -ArgumentList @('/uninstall', '/quiet') -Wait
+            }
+            $dir = Join-Path -Path "$env:PythonToolcachePath" -ChildPath "$env:PythonVersion"
+            if (Test-Path $dir) {
+              Write-Host "Removing Python directory: $dir..."
+              Remove-Item -Recurse -Force $dir
+            }
 
       - name: Delete macOS /Library/Frameworks/Python.framework
         if: matrix.platform == 'darwin'
