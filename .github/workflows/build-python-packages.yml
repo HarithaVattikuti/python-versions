@@ -117,35 +117,8 @@ jobs:
         with:
           submodules: true
 
-      # - name: Fully cleanup the toolcache directory before testing
-      #   run: ./helpers/clean-toolcache.ps1 -ToolName "Python"
-
-      - name: Uninstall existing Python versions
-        shell: pwsh
-        env:
-          PythonVersion: ${{ env.VERSION }}
-          Architecture: ${{ matrix.arch }}
-        run: |
-           $PythonToolCachePath = $env:AGENT_TOOLSDIRECTORY
-            if ([string]::IsNullOrEmpty($PythonToolCachePath)) {
-                # GitHub Windows images don't have `AGENT_TOOLSDIRECTORY` variable
-                $PythonToolCachePath = $env:RUNNER_TOOL_CACHE
-            }
-            if ([string]::IsNullOrEmpty($PythonToolCachePath)) {
-                # Final fallback to a default path
-                $PythonToolCachePath = "C:\hostedtoolcache\windows"
-            }
-
-            $exe = Join-Path -Path "$PythonToolCachePath\$env:PythonVersion\$env:Architecture" -ChildPath "python-$env:PythonVersion-$env:Architecture.exe"
-            if (Test-Path $exe) {
-              Write-Host "Uninstalling Python using $exe..."
-              Start-Process -FilePath $exe -ArgumentList @('/uninstall', '/quiet') -Wait
-            }
-            $dir = Join-Path -Path "$PythonToolCachePath" -ChildPath "$env:PythonVersion"
-            if (Test-Path $dir) {
-              Write-Host "Removing Python directory: $dir..."
-              Remove-Item -Recurse -Force $dir
-            }
+      - name: Fully cleanup the toolcache directory before testing
+        run: ./helpers/clean-toolcache.ps1 -ToolName "Python"
 
       - name: Delete macOS /Library/Frameworks/Python.framework
         if: matrix.platform == 'darwin'
@@ -215,6 +188,95 @@ jobs:
               exit $Result.FailedCount
             }
         working-directory: ${{ github.workspace }}/tests
+
+  test_python_windows_11_arm_both:
+    name: Test both normal and free-threaded on Windows 11 ARM
+    runs-on: windows-11-arm
+    env:
+      PYTHON_VERSION: ${{ inputs.VERSION || '3.13.7' }}
+      ARTIFACT_NAME_DEFAULT: python-${{ inputs.VERSION || '3.13.7' }}-win32-arm64
+      ARTIFACT_NAME_FREETHREADED: python-${{ inputs.VERSION || '3.13.7' }}-win32-arm64-freethreaded
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Fully cleanup the toolcache directory before testing
+        run: ./helpers/clean-toolcache.ps1 -ToolName "Python"
+        
+      # Download & extract the default build
+      - name: Download default artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ env.ARTIFACT_NAME_DEFAULT }}
+          path: ${{ runner.temp }}/${{ env.ARTIFACT_NAME_DEFAULT }}
+
+      - name: Extract default artifact
+        run: |
+          $artifact = "${{ env.ARTIFACT_NAME_DEFAULT }}.zip"
+          7z.exe x "$artifact" -y | Out-Null
+        working-directory: ${{ runner.temp }}/${{ env.ARTIFACT_NAME_DEFAULT }}
+
+      - name: Install default Python
+        run: |
+          powershell ./setup.ps1
+        working-directory: ${{ runner.temp }}/${{ env.ARTIFACT_NAME_DEFAULT }}
+
+      # Download & extract the freethreaded build
+      - name: Download freethreaded artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ env.ARTIFACT_NAME_FREETHREADED }}
+          path: ${{ runner.temp }}/${{ env.ARTIFACT_NAME_FREETHREADED }}
+
+      - name: Extract freethreaded artifact
+        run: |
+          $artifact = "${{ env.ARTIFACT_NAME_FREETHREADED }}.zip"
+          7z.exe x "$artifact" -y | Out-Null
+        working-directory: ${{ runner.temp }}/${{ env.ARTIFACT_NAME_FREETHREADED }}
+
+      - name: Install freethreaded Python
+        run: |
+          powershell ./setup.ps1
+        working-directory: ${{ runner.temp }}/${{ env.ARTIFACT_NAME_FREETHREADED }}
+      
+      - name: Setup Python ${{ env.ARTIFACT_NAME_DEFAULT }} ${{ env.ARTIFACT_NAME_FREETHREADED }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: |
+            ${{ env.ARTIFACT_NAME_DEFAULT }}
+            ${{ env.ARTIFACT_NAME_FREETHREADED }}
+          architecture: “arm64”
+          
+      # Verify both installations 
+      - name: Verify normal and freethreaded Python
+        shell: pwsh
+        run: |
+          $version = "${{ env.PYTHON_VERSION }}"
+          $basePath = $env:AGENT_TOOLSDIRECTORY
+          if ([string]::IsNullOrEmpty($basePath)) { $basePath = $env:RUNNER_TOOL_CACHE }
+          if ([string]::IsNullOrEmpty($basePath)) { $basePath = "C:\hostedtoolcache\windows" }
+
+          Write-Host "Check normal Python:"
+          $defaultPy = Join-Path -Path $basePath -ChildPath "$version\\arm64\\python.exe"
+          if (Test-Path $defaultPy) {
+            & $defaultPy -VVV
+            & $defaultPy -c 'print("default threading:", not hasattr(__import__("sys"), "_isfreethreaded") or not __import__("sys")._isfreethreaded)'
+          } else {
+            Write-Host "Default Python not found at $defaultPy"
+            exit 1
+          }
+
+          Write-Host "Check freethreaded Python:"
+          $ftPy = Join-Path -Path $basePath -ChildPath "$version\\arm64-freethreaded\\python.exe"
+          if (Test-Path $ftPy) {
+            & $ftPy -VVV
+            & $ftPy -c 'print("freethreaded:", getattr(__import__("sys"), "_isfreethreaded", False))'
+          } else {
+            Write-Host "Freethreaded Python not found at $ftPy"
+            exit 1
+          }
 
   publish_release:
       name: Publish release
