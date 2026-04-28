@@ -64,11 +64,12 @@ function Remove-RegistryEntries {
     )
 
     
-}
+
     $uninstallRegistrySections | Where-Object { Test-Path -Path Registry::$_ } | ForEach-Object {
         Get-ChildItem -Path Registry::$_ | ForEach-Object {
             $displayName = $_.GetValue("DisplayName")
             Write-Host "DisplayName: $displayName"
+        }
         Get-ChildItem -Path Registry::$_ | Where-Object { $_.getValue("DisplayName") -match $versionFilter } | ForEach-Object {
             Remove-Item Registry::$_ -Recurse -Force -Verbose
         }
