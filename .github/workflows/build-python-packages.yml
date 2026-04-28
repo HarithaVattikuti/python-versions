@@ -117,8 +117,21 @@ jobs:
         with:
           submodules: true
 
-      - name: Fully cleanup the toolcache directory before testing
-        run: ./helpers/clean-toolcache.ps1 -ToolName "Python"
+      # - name: Fully cleanup the toolcache directory before testing
+      #   run: ./helpers/clean-toolcache.ps1 -ToolName "Python"
+
+      - name: Cleanup Python installations
+        run: |
+          $targetPath = $env:AGENT_TOOLSDIRECTORY
+          if ([string]::IsNullOrEmpty($targetPath)) {
+              $targetPath = $env:RUNNER_TOOL_CACHE
+          }
+          $pythonPath = Join-Path $targetPath "Python"
+          if (Test-Path $pythonPath) {
+              Write-Host "Removing existing Python installations - $pythonPath..."
+              Get-ChildItem -Path $pythonPath -Recurse | Where-Object { $_.LinkType -eq "SymbolicLink" } | ForEach-Object { $_.Delete() }
+              Remove-Item -Path $pythonPath -Recurse -Force
+          }
 
       - name: Delete macOS /Library/Frameworks/Python.framework
         if: matrix.platform == 'darwin'
