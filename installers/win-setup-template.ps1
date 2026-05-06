@@ -120,6 +120,7 @@ Remove-RegistryEntries -Architecture $Architecture -MajorVersion $MajorVersion -
 Write-Host "Create Python $Version folder in $PythonToolcachePath"
 New-Item -ItemType Directory -Path $PythonArchPath -Force | Out-Null
 
+Write-Host "Copy PythonExecName - $PythonExecName"
 Write-Host "Copy Python binaries to $PythonArchPath"
 Copy-Item -Path ./$PythonExecName -Destination $PythonArchPath | Out-Null
 
@@ -127,9 +128,18 @@ Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
 
 # cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
-$InstallerPath = Join-Path $PythonArchPath $PythonExecName
-& $InstallerPath $ExecParams /quiet
-if ($LASTEXITCODE -ne 0) {
+# $InstallerPath = Join-Path $PythonArchPath $PythonExecName
+# & $InstallerPath $ExecParams /quiet
+$InstallerPath = Join-Path -Path $PythonArchPath -ChildPath $PythonExecName
+
+Push-Location -LiteralPath $PythonArchPath
+try {
+    & $InstallerPath $ExecParams /quiet
+    $installExitCode = $LASTEXITCODE
+} finally {
+    Pop-Location
+}
+if ($installExitCode -ne 0) {
     Throw "Error happened during Python installation"
 }
 
