@@ -134,8 +134,8 @@ Write-Host "Before Quote ExecParams -  $ExecParams"
 # }
 # Write-Host "After QuoteExecParams -  $ExecParams"
 
-# cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
-Start-Process -FilePath "$PythonArchPath\$PythonExecName" -ArgumentList "$ExecParams", "/quiet" -NoNewWindow -Wait
+cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
+# Start-Process -FilePath "$PythonArchPath\$PythonExecName" -ArgumentList "$ExecParams", "/quiet" -NoNewWindow -Wait
 # & "$PythonArchPath\$PythonExecName" "$ExecParams" "/quiet"
 # $InstallerPath = Join-Path $PythonArchPath $PythonExecName
 # & $InstallerPath $ExecParams /quiet
