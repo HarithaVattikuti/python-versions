@@ -126,8 +126,13 @@ Copy-Item -Path ./$PythonExecName -Destination $PythonArchPath | Out-Null
 
 Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
+Write-Host "Before Quote ExecParams -  $ExecParams"
 
-Write-Host "ExecParams -  $ExecParams"
+# Quote the path (if not already quoted) for DefaultAllUsersTargetDir key
+if ($ExecParams -match 'DefaultAllUsersTargetDir=[^\s"]*\s[^\s"]*') {
+    $ExecParams = $ExecParams -replace '(DefaultAllUsersTargetDir=)([^\s"][^\s]*\s[^\s]*)', '$1"$2"'
+}
+Write-Host "After QuoteExecParams -  $ExecParams"
 
 # cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
 # $InstallerPath = Join-Path $PythonArchPath $PythonExecName
