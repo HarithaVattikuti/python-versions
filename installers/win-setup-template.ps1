@@ -127,14 +127,18 @@ Copy-Item -Path ./$PythonExecName -Destination $PythonArchPath | Out-Null
 Write-Host "Install Python $Version in $PythonToolcachePath..."
 $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -PythonArchPath $PythonArchPath
 
+Write-Host "ExecParams -  $ExecParams"
+
 # cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
 # $InstallerPath = Join-Path $PythonArchPath $PythonExecName
 # & $InstallerPath $ExecParams /quiet
 $InstallerPath = Join-Path -Path $PythonArchPath -ChildPath $PythonExecName
+$paramsArray = $ExecParams -split '\s+'
 
 Push-Location -LiteralPath $PythonArchPath
 try {
-    & $InstallerPath $ExecParams /quiet
+    # & $InstallerPath $ExecParams /quiet
+    & $InstallerPath @paramsArray /quiet
     $installExitCode = $LASTEXITCODE
 } finally {
     Pop-Location
