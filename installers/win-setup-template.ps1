@@ -129,26 +129,28 @@ $ExecParams = Get-ExecParams -IsMSI $IsMSI -IsFreeThreaded $IsFreeThreaded -Pyth
 Write-Host "Before Quote ExecParams -  $ExecParams"
 
 # Quote the path (if not already quoted) for DefaultAllUsersTargetDir key
-if ($ExecParams -match 'DefaultAllUsersTargetDir=[^\s"]*\s[^\s"]*') {
-    $ExecParams = $ExecParams -replace '(DefaultAllUsersTargetDir=)([^\s"][^\s]*\s[^\s]*)', '$1"$2"'
-}
-Write-Host "After QuoteExecParams -  $ExecParams"
+# if ($ExecParams -match 'DefaultAllUsersTargetDir=[^\s"]*\s[^\s"]*') {
+#     $ExecParams = $ExecParams -replace '(DefaultAllUsersTargetDir=)([^\s"][^\s]*\s[^\s]*)', '$1"$2"'
+# }
+# Write-Host "After QuoteExecParams -  $ExecParams"
 
 # cmd.exe /c "cd $PythonArchPath && call $PythonExecName $ExecParams /quiet"
+# Start-Process -FilePath "$PythonArchPath\$PythonExecName" -ArgumentList "$ExecParams", "/quiet" -NoNewWindow -Wait
+& "$PythonArchPath\$PythonExecName" "$ExecParams" "/quiet"
 # $InstallerPath = Join-Path $PythonArchPath $PythonExecName
 # & $InstallerPath $ExecParams /quiet
-$InstallerPath = Join-Path -Path $PythonArchPath -ChildPath $PythonExecName
-$paramsArray = $ExecParams -split '\s+'
+# $InstallerPath = Join-Path -Path $PythonArchPath -ChildPath $PythonExecName
+# $paramsArray = $ExecParams -split '\s+'
 
-Push-Location -LiteralPath $PythonArchPath
-try {
-    # & $InstallerPath $ExecParams /quiet
-    & $InstallerPath @paramsArray /quiet
-    $installExitCode = $LASTEXITCODE
-} finally {
-    Pop-Location
-}
-if ($installExitCode -ne 0) {
+# Push-Location -LiteralPath $PythonArchPath
+# try {
+#     # & $InstallerPath $ExecParams /quiet
+#     & $InstallerPath @paramsArray /quiet
+#     $installExitCode = $LASTEXITCODE
+# } finally {
+#     Pop-Location
+# }
+if ($LASTEXITCODE -ne 0) {
     Throw "Error happened during Python installation"
 }
 
